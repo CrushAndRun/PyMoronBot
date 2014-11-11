@@ -6,6 +6,7 @@ Created on Jan 24, 2014
 """
 
 import urllib
+import json
 
 from IRCMessage import IRCMessage
 from IRCResponse import IRCResponse, ResponseType
@@ -13,7 +14,6 @@ from CommandInterface import CommandInterface
 
 from Utils import WebUtils
 
-from bs4 import BeautifulSoup
 from twisted.words.protocols.irc import assembleFormattedText, attributes as A
 
 
@@ -32,39 +32,33 @@ class Urban(CommandInterface):
         
         search = urllib.quote(message.Parameters)
 
-        url = 'http://www.urbandictionary.com/define.php?term={0}'.format(search)
+        url = 'http://api.urbandictionary.com/v0/define?term={0}'.format(search)
         
         webPage = WebUtils.fetchURL(url)
 
-        soup = BeautifulSoup(webPage.body)
-        # replace link tags with their contents
-        [a.unwrap() for a in soup.find_all('a')]
+        response = json.loads(webPage.body)
 
-        box = soup.find('div', {'class': 'box'})
-
-        if not box:
+        if len(response['list']) == 0:
             return IRCResponse(ResponseType.Say, "No entry found for '{0}'".format(search), message.ReplyTo)
 
         graySplitter = assembleFormattedText(A.normal[' ', A.fg.gray['|'], ' '])
 
-        word = box.find('div', {'class': 'word'}).text.strip()
+        defn = response['list'][0]
 
-        # 2014-01-28 really, urban dictionary? 'definition' to 'meaning'? what an important change!
-        definition = box.find('div', {'class': 'meaning'})
-        if definition.br is not None:
-            definition.br.replace_with('\n')
-        definition = graySplitter.join([s.strip() for s in definition.text.strip().split('\n')])
+        word = defn['word']
+        
+        definition = defn['definition']
+        definition = graySplitter.join([s.strip() for s in definition.strip().split('\r\n')])
 
-        example = box.find('div', {'class': 'example'})
-        if example.br is not None:
-            example.br.replace_with('\n')
-        example = graySplitter.join([s.strip() for s in example.text.strip().split('\n')])
+        example = defn['example']
+        example = graySplitter.join([s.strip() for s in example.strip().split('\r\n')])
 
-        author = box.find('div', {'class': 'contributor'}).text.strip().replace('\n', ' ')
+        author = defn['author']
 
-        counts = box.find('div', {'class': 'thumbs-counts'}).find_all('span', {'class': 'count'})
-        up = counts[0].text
-        down = counts[1].text
+        up = defn['thumbs_up']
+        down = defn['thumbs_down']
+        
+        more = 'http://{}.urbanup.com/'.format(word)
 
         if word.lower() != message.Parameters.lower():
             word = "{0} (Contains '{0}')".format(word, message.Parameters)
@@ -85,7 +79,7 @@ class Urban(CommandInterface):
                                  exampleFormatString.format(example),
                                  message.ReplyTo),
                      IRCResponse(ResponseType.Say,
-                                 byFormatString.format(author, up, down, url),
+                                 byFormatString.format(author, up, down, more),
                                  message.ReplyTo)]
         
         return responses

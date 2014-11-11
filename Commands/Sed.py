@@ -23,9 +23,8 @@ class Sed(CommandInterface):
     historySize = 20
 
     def onLoad(self):
-        #TODO: make these per-channel
-        self.messages = []
-        self.unmodifiedMessages = []
+        self.messages = {}
+        self.unmodifiedMessages = {}
 
     def shouldExecute(self, message):
         """
@@ -38,14 +37,14 @@ class Sed(CommandInterface):
         """
         @type message: IRCMessage
         """
-        if message.Command.lower() == 'sed':
+        if message.Command.lower() in self.triggers:
             match = self.match(message.Parameters)
         else:
             match = self.match(message.MessageString)
 
         if match:
             search, replace, flags = match
-            response = self.substitute(search, replace, flags)
+            response = self.substitute(search, replace, flags, message.ReplyTo)
 
             if response is not None:
                 responseType = ResponseType.Say
@@ -75,8 +74,16 @@ class Sed(CommandInterface):
             flags = ''
         return search, replace, flags
 
-    def substitute(self, search, replace, flags):
-        messages = self.unmodifiedMessages if 'o' in flags else self.messages
+    def substitute(self, search, replace, flags, channel):
+        # Apparently re.sub understands escape sequences in the replacement string; strip all but the backreferences
+        replace = replace.replace('\\', '\\\\')
+        replace = re.sub(r'\\([1-9][0-9]?([^0-9]|$))', r'\1', replace)
+        
+        if channel not in self.messages:
+            self.messages[channel] = []
+            self.unmodifiedMessages[channel] = []
+        
+        messages = self.unmodifiedMessages[channel] if 'o' in flags else self.messages[channel]
 
         for message in reversed(messages):
             if 'g' in flags:
@@ -103,9 +110,12 @@ class Sed(CommandInterface):
         return None
 
     def storeMessage(self, message, unmodified=True):
-        self.messages.append(message)
-        self.messages = self.messages[-self.historySize:]
+        if message.ReplyTo not in self.messages:
+            self.messages[message.ReplyTo] = []
+            self.unmodifiedMessages[message.ReplyTo] = []
+        self.messages[message.ReplyTo].append(message)
+        self.messages[message.ReplyTo] = self.messages[message.ReplyTo][-self.historySize:]
 
         if unmodified:
-            self.unmodifiedMessages.append(message)
-            self.unmodifiedMessages = self.unmodifiedMessages[-self.historySize:]
+            self.unmodifiedMessages[message.ReplyTo].append(message)
+            self.unmodifiedMessages[message.ReplyTo] = self.unmodifiedMessages[message.ReplyTo][-self.historySize:]

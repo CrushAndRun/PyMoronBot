@@ -127,7 +127,11 @@ class Responses(CommandInterface):
                     r'h[o0]+n+k+': 'goose',
                     r'h[i1]+[s5]{2,}': 'snake',
                     r'r+[o0]+[a4]+r+': 'lion',
-                    r'(h[o0]+w+l+|[a4]+w[o0]{3,})': 'wolf',
+                    r'(h[o0]+w+l+|[a4]+w?[o0]{2,})': 'wolf',
+                    r'bl[e3]{2,}p\s+bl[o0]{2,}p': 'droid',
+                    r'y?[a4]r{2,}': 'pirate',
+                    r'qu[a4]+ck': 'duck',
+                    r'wh[o0]{2,}': 'owl',
                 }
 
                 self.animal = None
@@ -140,32 +144,63 @@ class Responses(CommandInterface):
 
             def animalTalkwords(message):
                 randomChance = random.randint(1, 20)
+                if message.User.Name == 'Emily':
+                    randomChance = random.randint(1, 25)
                 if randomChance == 1:
                     ''' User Critically Failed '''
-                    return [IRCResponse(ResponseType.Say,
-                                        '{} critically fails at being a {}'.format(message.User.Name, self.animal),
-                                        message.ReplyTo)]
+                    if self.animal == 'droid':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is DEFINITELY NOT the Droid you are looking for.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    else:
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} critically fails at being a {}.'.format(message.User.Name, self.animal),
+                                            message.ReplyTo)]
 
                 elif randomChance <= 8:
                     ''' User Is Not A [animal] '''
-                    return [IRCResponse(ResponseType.Say,
-                                        '{} is not a {}'.format(message.User.Name, self.animal),
-                                        message.ReplyTo)]
+                    if self.animal == 'droid':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is not the Droid you are looking for.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    else:
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is not a {}.'.format(message.User.Name, self.animal),
+                                            message.ReplyTo)]
                 elif randomChance <= 14:
                     '''User Might Be A [animal] '''
-                    return [IRCResponse(ResponseType.Say,
-                                        '{} /might/ be a {}'.format(message.User.Name, self.animal),
-                                        message.ReplyTo)]
+                    if self.animal == 'droid':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} might be the Droid you are looking for.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    else:
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} /might/ be a {}.'.format(message.User.Name, self.animal),
+                                            message.ReplyTo)]
                 elif randomChance <= 19:
                     ''' User Is A [animal] '''
-                    return [IRCResponse(ResponseType.Say,
-                                        '{} is DEFINITELY a {}'.format(message.User.Name, self.animal),
-                                        message.ReplyTo)]
+                    if self.animal == 'droid':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is the Droid you are looking for.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    elif self.animal == 'puppeh':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is such doge. wow.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    else:
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is DEFINITELY a {}.'.format(message.User.Name, self.animal),
+                                            message.ReplyTo)]
                 elif randomChance == 20:
                     ''' User Is A Critical [animal] '''
-                    return [IRCResponse(ResponseType.Say,
-                                        '{} is a CRITICAL {}!'.format(message.User.Name, self.animal),
-                                        message.ReplyTo)]
+                    if self.animal == 'droid':
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is DEFINITELY the Droid you are looking for.'.format(message.User.Name),
+                                            message.ReplyTo)]
+                    else:
+                        return [IRCResponse(ResponseType.Say,
+                                            '{} is a CRITICAL {}!'.format(message.User.Name, self.animal),
+                                            message.ReplyTo)]
                 else:
                     ''' Roll is outside of bounds, Magic! '''
                     return [IRCResponse(ResponseType.Say,
@@ -184,7 +219,7 @@ class Responses(CommandInterface):
 
             def boopTalkwords(message):
                 boops = [
-                    "http://goo.gl/HJzfS",              # feline anatomy
+                    #"http://goo.gl/HJzfS",              # feline anatomy
                     "http://goo.gl/Umt61b",             # not boop ur nose, bite tur nose
                     "http://bit.ly/zA2bUY",             # i boop ur noes
                     "http://bit.ly/wQoI8p",             # hey cat, imma boop ur head, lol
@@ -238,11 +273,15 @@ class Responses(CommandInterface):
                     "http://i.imgur.com/8VFggj4.gif",   # What's in the boop box? (it's kittens)
                     "http://i.imgur.com/2dqTNoQ.gif",   # Sheep and Cow charge boop
                     "http://i.imgur.com/h1TAtur.gif",   # Young deer head boop
-                    "http://i.imgur.com/Bv6r4Lu.gif",   # Dancing boxer boop
+                    #"http://i.imgur.com/Bv6r4Lu.gif",   # Dancing boxer boop
                     "http://i.imgur.com/zHrQoMT.gif",   # run-by cat boop
                     "http://i.imgur.com/RKzPhan.gif",   # kitteh using every kind of boop for attention
                     "http://i.imgur.com/CqTlFaX.gif",   # snow leopard boops a cat, then flees
                     "http://i.imgur.com/oMDVg1b.gif",   # mantis shrimp boops an octopus
+                    "https://imgur.com/r/aww/Ih2NvGP",  # dog boops another dog with its paw "The hoomins do it all the time"
+                    "http://i.imgur.com/gFcKWDM.gif",   # fish jump-boops a bear
+                    "http://i.imgur.com/kgPiK.jpg",     # pony with a small human riding it boops a horse
+                    "http://goo.gl/S8LUk4",             # kitten boops a puppy, puppy tries to return it but falls over
                 ]
                 return [IRCResponse(ResponseType.Say,
                                     'Boop! {}'.format(random.choice(boops)),
@@ -392,6 +431,6 @@ class MobroResponseDict(object):
         self.dict[mbr.name] = mbr
 
     def toggle(self, name, chatMessage=IRCMessage):
-        if name in self.dict:
-            return self.dict[name].toggle(chatMessage)
+        if name.lower() in self.dict:
+            return self.dict[name.lower()].toggle(chatMessage)
         return
