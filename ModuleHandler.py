@@ -27,6 +27,21 @@ class ModuleHandler(object):
         self.postProcesses = {}
         self.postProcessCaseMapping = {}
 
+        self.actions = {}
+
+    def registerForAction(self, action, handler):
+        if action in self.actions:
+            self.actions[action].append(handler)
+        else:
+            self.actions[action] = [handler]
+
+    def runAction(self, action, *args, **kwargs):
+        if action in self.actions:
+            for handler in self.actions[action]:
+                result = handler(*args, **kwargs)
+                if result is not None:
+                    return result
+
     def loadCommand(self, name):
         return self._load(name, 'Commands', self.commands, self.commandCaseMapping)
 
